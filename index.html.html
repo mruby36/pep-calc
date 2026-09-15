@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peptide Calculator v7.4</title>
+<style>
+:root{--bg:#0f1117;--card:#1e2130;--card2:#252840;--border:#2e3250;--accent:#6c63ff;--green:#4ecca3;--warn:#ffd166;--red:#ff6b6b;--text:#e8eaf6;--muted:#8891b4;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:16px;padding-bottom:40px;}
+h1{text-align:center;font-size:1.4rem;font-weight:800;letter-spacing:.1em;margin-bottom:4px;}
+.sub{text-align:center;color:var(--muted);font-size:.75rem;letter-spacing:.1em;margin-bottom:12px;}
+
+/* Date navigation */
+.datebar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.datebtn{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8rem;font-weight:700;padding:7px 12px;cursor:pointer;}
+.datebtn:hover{border-color:var(--accent);color:var(--accent);}
+.datebtn.today-btn{background:rgba(78,204,163,.12);border-color:var(--green);color:var(--green);}
+.datelbl{font-size:.85rem;font-weight:700;color:var(--green);min-width:180px;text-align:center;}
+
+.savebar{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.save-ind{font-size:.7rem;color:var(--green);font-weight:700;opacity:0;transition:opacity .4s;}
+.save-ind.show{opacity:1;}
+.clear-btn,.add-custom-btn,.export-btn,.import-btn{background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:.72rem;font-weight:700;padding:5px 14px;cursor:pointer;}
+.clear-btn:hover{border-color:var(--red);color:var(--red);}
+.add-custom-btn:hover,.export-btn:hover,.import-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.cbar{height:3px;}
+.cheader{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
+.cnum{font-size:.65rem;color:var(--muted);font-weight:700;letter-spacing:.1em;}
+.xbtn{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 6px;border-radius:4px;}
+.xbtn:hover{color:var(--red);}
+.cbody{padding:14px;}
+.psel{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.88rem;font-weight:700;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238891b4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;margin-bottom:6px;}
+.pdesc{font-size:.7rem;color:var(--muted);font-style:italic;line-height:1.4;margin-bottom:10px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.lbl{font-size:.6rem;color:var(--muted);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.inp{background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:7px 10px;font-size:.86rem;width:100%;}
+.inp:focus{outline:none;border-color:var(--accent);}
+select.inp{cursor:pointer;appearance:none;}
+.cpill{display:inline-block;background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:.68rem;color:var(--green);font-weight:700;margin-top:3px;}
+.utog{display:flex;gap:4px;margin-top:3px;}
+.ubtn{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:.66rem;font-weight:700;padding:4px;cursor:pointer;text-align:center;}
+.ubtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* Days + AM/PM */
+.dlbl{font-size:.6rem;color:var(--muted);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.drow{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.dbtn{flex:1;min-width:28px;background:var(--card2);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:.66rem;font-weight:700;padding:5px 2px;cursor:pointer;text-align:center;}
+.dbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.ampmrow{display:flex;gap:6px;margin-bottom:12px;}
+.ampmbtn{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.72rem;font-weight:700;padding:6px;cursor:pointer;text-align:center;}
+.ampmbtn.on{background:var(--green);border-color:var(--green);color:#0f1117;}
+
+.drawbox{background:linear-gradient(135deg,#1a2040,#1e2a45);border:1px solid #2e4080;border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.drawlbl{font-size:.6rem;color:var(--muted);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}
+.drawml{font-size:2rem;font-weight:900;color:var(--green);line-height:1;}
+.drawsub{font-size:.76rem;color:var(--text);opacity:.7;margin-top:3px;}
+.costbox{background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.costhdr{padding:7px 12px;background:rgba(108,99,255,.1);border-bottom:1px solid var(--border);font-size:.6rem;color:var(--accent);font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+.costinp{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);}
+.coststats{display:grid;grid-template-columns:repeat(3,1fr);}
+.cs{padding:9px 6px;text-align:center;border-right:1px solid var(--border);}
+.cs:last-child{border-right:none;}
+.csv{font-size:1rem;font-weight:800;color:var(--text);display:block;margin-bottom:1px;}
+.csl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+
+/* Learn More */
+.lmbtn{width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.72rem;font-weight:700;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:.05em;}
+.lmbtn:hover{border-color:var(--accent);color:var(--accent);}
+.lmchev{transition:transform .25s;}
+.lmbtn.open .lmchev{transform:rotate(180deg);}
+.lmpanel{display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:14px;}
+.lmpanel.open{display:block;}
+.lmsec{margin-bottom:14px;}
+.lmstitle{font-size:.6rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.lmsbody{font-size:.76rem;color:var(--text);line-height:1.6;opacity:.9;}
+.lmsbody ul{padding-left:14px;margin-top:4px;}
+.lmsbody li{margin-bottom:3px;}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+.dc{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;}
+.dclbl{font-size:.58rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px;}
+.dcval{font-size:.8rem;font-weight:700;}
+.tag{display:inline-block;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);border-radius:4px;font-size:.62rem;color:#9c94ff;padding:2px 6px;margin:2px 2px 2px 0;font-weight:700;}
+.caution{background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.25);border-radius:7px;padding:8px 10px;font-size:.72rem;color:var(--warn);margin-top:8px;line-height:1.5;}
+
+.addbtn{display:flex;justify-content:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.addbtn button{background:var(--card);border:2px dashed var(--border);border-radius:12px;color:var(--muted);padding:12px 28px;font-size:.88rem;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:8px;}
+.addbtn button:hover{border-color:var(--accent);color:var(--accent);}
+hr{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.seclbl{font-size:.68rem;letter-spacing:.15em;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.sumcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.sumtitle{font-size:.6rem;letter-spacing:.12em;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+.sumbig{font-size:1.7rem;font-weight:900;color:var(--green);line-height:1;}
+.sumsub{font-size:.72rem;color:var(--muted);margin-top:4px;}
+.fitbadge{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:6px;}
+.fitok{background:rgba(78,204,163,.15);color:var(--green);}
+.fitwarn{background:rgba(255,209,102,.15);color:var(--warn);}
+.diagrow{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.diagname{width:88px;font-size:.73rem;font-weight:700;flex-shrink:0;}
+.diagbar{flex:1;height:18px;background:var(--card2);border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+.diagfill{height:100%;border-radius:4px;min-width:2px;transition:width .4s;}
+.diagval{width:56px;font-size:.7rem;color:var(--muted);text-align:right;flex-shrink:0;}
+.tblwrap{overflow-x:auto;margin-bottom:18px;}
+table{width:100%;border-collapse:collapse;font-size:.76rem;}
+th{background:var(--card2);color:var(--muted);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+td:first-child{font-weight:700;}
+.gv{color:var(--green);font-weight:700;}
+.wv{color:var(--warn);}
+.totbar{background:linear-gradient(135deg,#1a1840,#1e2040);border:1px solid var(--accent);border-radius:12px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.totlbl{font-size:.72rem;letter-spacing:.12em;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.totval{font-size:1.9rem;font-weight:900;color:var(--green);}
+.rbadge{display:inline-flex;align-items:center;gap:3px;font-size:.7rem;padding:2px 7px;border-radius:5px;font-weight:700;}
+.rb-s{background:rgba(108,99,255,.15);color:#9c94ff;}
+.rb-i{background:rgba(247,164,74,.15);color:#f7a44a;}
+.rb-n{background:rgba(78,204,163,.15);color:var(--green);}
+.empty{text-align:center;color:var(--muted);font-size:.78rem;padding:18px;font-style:italic;}
+
+/* AM/PM sections */
+.ampmsec{margin-bottom:16px;}
+.ampmtitle{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ampmtitle span{opacity:.7;font-weight:500;}
+
+/* Modal for Add Custom Peptide */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:20px;}
+.modal h2{font-size:1.1rem;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.modal .close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;}
+.modal .close:hover{color:var(--red);}
+.modal .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.modal .full{grid-column:1 / -1;}
+.modal label{font-size:.65rem;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:3px;}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 10px;font-size:.86rem;}
+.modal textarea{min-height:70px;resize:vertical;}
+.modal .actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;}
+.modal .btn{padding:9px 18px;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer;border:none;}
+.modal .btn-primary{background:var(--accent);color:#fff;}
+.modal .btn-secondary{background:var(--card2);color:var(--muted);border:1px solid var(--border);}
+.modal .section-title{font-size:.7rem;color:var(--accent);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:16px 0 8px;padding-top:8px;border-top:1px solid var(--border);}
+
+@media(max-width:600px){.sumgrid{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.modal .row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<h1>⚗️ PEPTIDE CALCULATOR</h1>
+<div class="sub">DOSE · DRAW · COST · LONGEVITY · AM/PM</div>
+
+<div class="datebar">
+  <button class="datebtn" onclick="changeDay(-1)">◀ Prev</button>
+  <div class="datelbl" id="dateLabel">Loading…</div>
+  <button class="datebtn" onclick="changeDay(1)">Next ▶</button>
+  <button class="datebtn today-btn" onclick="goToday()">Today</button>
+</div>
+
+<div class="savebar">
+  <span class="save-ind" id="saveInd">✓ Stack saved</span>
+  <button class="add-custom-btn" onclick="openCustomModal()">＋ Add Custom Peptide</button>
+  <button class="export-btn" onclick="exportStack()">⬆ Export</button>
+  <button class="import-btn" onclick="importStack()">⬇ Import</button>
+  <button class="clear-btn" onclick="clearStack()">🗑 Clear Stack</button>
+</div>
+
+<div class="grid" id="cardsGrid"></div>
+<div class="addbtn">
+  <button onclick="addCard()"><span style="font-size:1.2rem">＋</span> Add Peptide</button>
+</div>
+
+<hr>
+<div class="seclbl">📊 STACK SUMMARY</div>
+<div class="sumgrid">
+  <div class="sumcard">
+    <div class="sumtitle">💉 Syringe Volume</div>
+    <div class="sumbig" id="syrTotal">—</div>
+    <div class="sumsub" id="syrSub"></div>
+    <div id="syrFit"></div>
+  </div>
+  <div class="sumcard">
+    <div class="sumtitle">🫁 Intranasal Volume</div>
+    <div class="sumbig" id="nasalTotal">—</div>
+    <div class="sumsub" id="nasalSub"></div>
+  </div>
+</div>
+
+<div class="seclbl">📏 SYRINGE DIAGRAMS</div>
+<div id="diagWrap" style="margin-bottom:18px;"><div class="empty">Add peptides to see diagrams.</div></div>
+
+<hr>
+<div class="seclbl">🧪 VIAL LONGEVITY &amp; COST</div>
+<div class="tblwrap">
+<table><thead><tr><th>Peptide</th><th>Doses/Vial</th><th>Freq/Wk</th><th>Vial Lasts</th><th>Cost/Vial</th><th>Cost/Dose</th><th>Weekly Cost</th></tr></thead>
+<tbody id="longevityBody"><tr><td colspan="7" class="empty">No peptides configured.</td></tr></tbody></table>
+</div>
+<div class="totbar"><span class="totlbl">💰 Weekly Stack Cost</span><span class="totval" id="weeklyTotal">$0.00</span></div>
+
+<hr>
+<div class="seclbl" id="todayTitle">💉 SCHEDULED FOR SELECTED DAY</div>
+<div id="todayContent"><div class="empty">No peptides scheduled for this day.</div></div>
+
+<!-- Custom Peptide Modal -->
+<div class="modal-overlay" id="customModal">
+  <div class="modal">
+    <h2>Add Custom Peptide <button class="close" onclick="closeCustomModal()">×</button></h2>
+    
+    <div class="row">
+      <div class="full">
+        <label>Peptide Name *</label>
+        <input id="cName" placeholder="e.g. Thymosin Alpha-4" maxlength="40">
+      </div>
+    </div>
+    <div class="row">
+      <div class="full">
+        <label>Short Description</label>
+        <input id="cDesc" placeholder="Brief one-line description">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Vial Size (mg)</label>
+        <input id="cVial" type="number" value="10" min="0" step="any">
+      </div>
+      <div>
+        <label>BAC Water (mL)</label>
+        <input id="cBac" type="number" value="2" min="0" step="any">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Default Dose</label>
+        <input id="cDose" type="number" value="1" min="0" step="any">
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="cUnit">
+          <option value="mg">mg</option>
+          <option value="mcg">mcg</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Route</label>
+        <select id="cRoute">
+          <option value="SubQ">SubQ</option>
+          <option value="IM">IM</option>
+          <option value="SubQ/IM">SubQ/IM</option>
+          <option value="Intranasal">Intranasal</option>
+        </select>
+      </div>
+      <div>
+        <label>Color (optional)</label>
+        <input id="cColor" type="color" value="#6c63ff" style="height:38px;padding:2px;">
+      </div>
+    </div>
+
+    <div class="section-title">Optional – Learn More Content</div>
+    <div class="row">
+      <div class="full">
+        <label>Mechanism (1–2 sentences)</label>
+        <textarea id="cMech" placeholder="How it works..."></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <div class="full">
+        <label>Key Benefits (comma separated)</label>
+        <input id="cBenefits" placeholder="Benefit 1, Benefit 2, Benefit 3">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Typical Dose</label>
+        <input id="cTypDose" placeholder="e.g. 1–2 mg">
+      </div>
+      <div>
+        <label>Frequency</label>
+        <input id="cFreq" placeholder="e.g. 2×/week">
+      </div>
+    </div>
+    <div class="row">
+      <div class="full">
+        <label>Caution / Notes</label>
+        <input id="cCaution" placeholder="Important safety or research notes">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeCustomModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomPeptide()">Save Peptide</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const DNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let viewDate = new Date();
+viewDate.setHours(12,0,0,0);
+
+// Built-in peptides
+const BUILTIN_P = [
+  {name:'BPC-157',color:'#4ecca3',vial:5,bac:1,dose:.5,unit:'mg',route:'SubQ/IM',desc:'💊 Gut lining & soft-tissue repair; accelerates tendon, ligament and joint healing. Anti-inflammatory.'},
+  {name:'TB-500',color:'#6c63ff',vial:10,bac:2,dose:2.5,unit:'mg',route:'SubQ/IM',desc:'🏃 Systemic tissue repair; reduces inflammation, promotes muscle recovery and flexibility.'},
+  {name:'GHK-Cu',color:'#f7a44a',vial:5,bac:1,dose:1,unit:'mg',route:'SubQ',desc:'✨ Copper peptide; skin regeneration, anti-aging, wound healing, collagen synthesis.'},
+  {name:'KPV',color:'#ff6b6b',vial:10,bac:1,dose:.5,unit:'mg',route:'SubQ',desc:'🛡️ Anti-inflammatory, gut healing, immune modulation.'},
+  {name:'NAD+',color:'#5bc4ff',vial:500,bac:5,dose:25,unit:'mg',route:'SubQ',desc:'⚡ Cellular energy, mitochondrial function, DNA repair, anti-aging.'},
+  {name:'Selank',color:'#a8e6cf',vial:5,bac:5,dose:.25,unit:'mg',route:'Intranasal',desc:'🧠 Anxiolytic, nootropic, immune modulation. Typically intranasal.'},
+  {name:'Semax',color:'#a29bfe',vial:3,bac:3,dose:.3,unit:'mg',route:'Intranasal',desc:'🧬 Nootropic, neuroprotection, cognitive enhancement.'},
+  {name:'PT-141',color:'#fd79a8',vial:10,bac:2,dose:1,unit:'mg',route:'SubQ',desc:'💜 Sexual health, libido enhancement, melanocortin receptor agonist.'},
+  {name:'Epitalon',color:'#00cec9',vial:10,bac:2,dose:5,unit:'mg',route:'SubQ/IM',desc:'⏳ Anti-aging, telomere extension, sleep regulation, pineal gland support.'},
+  {name:'CJC-1295',color:'#e17055',vial:2,bac:2,dose:1,unit:'mg',route:'SubQ',desc:'📈 Growth hormone releasing peptide; muscle growth, fat loss, recovery.'},
+  {name:'Ipamorelin',color:'#fdcb6e',vial:2,bac:2,dose:.2,unit:'mg',route:'SubQ',desc:'🌙 GH secretagogue; muscle growth, anti-aging, minimal side effects.'},
+  {name:'Thymosin Alpha-1',color:'#74b9ff',vial:10,bac:2,dose:1.5,unit:'mg',route:'SubQ',desc:'🦠 Immune support, antiviral, anti-cancer, immune modulation.'},
+  {name:'Thymosin Alpha-4',color:'#74b9ff',vial:10,bac:2,dose:1.5,unit:'mg',route:'SubQ',desc:'🦠 Systemic tissue repair; reduces inflammation, promotes muscle recovery and flexibility.'},
+  {name:'DSIP',color:'#81ecec',vial:5,bac:2,dose:.1,unit:'mg',route:'SubQ',desc:'😴 Delta sleep-inducing peptide; sleep quality improvement, stress reduction.'},
+  {name:'Melanotan II',color:'#b2bec3',vial:10,bac:2,dose:.5,unit:'mg',route:'SubQ',desc:'☀️ Tanning peptide; libido, appetite suppression, UV protection.'},
+  {name:'Oxytocin',color:'#ff7675',vial:2,bac:2,dose:.1,unit:'mg',route:'Intranasal',desc:'💕 Bonding, social behavior, stress relief, wound healing, anti-inflammatory.'},
+  {name:'LL-37',color:'#55efc4',vial:10,bac:2,dose:1,unit:'mg',route:'SubQ',desc:'🧫 Antimicrobial peptide; immune defense, wound healing, anti-biofilm.'},
+  {name:'Cerebrolysin',color:'#0984e3',vial:10,bac:1,dose:5,unit:'mg',route:'IM',desc:'🧩 Neuroprotection, cognitive enhancement, neurogenesis support.'},
+  {name:'Tesamorelin',color:'#ff9f43',vial:2,bac:2,dose:2,unit:'mg',route:'SubQ',desc:'💪 FDA-approved GHRH analog; reduces visceral fat, raises IGF-1, improves body composition.'},
+];
+
+const BUILTIN_INFO = {
+  'BPC-157':{mech:'Synthetic pentadecapeptide from gastric juice. Upregulates GH receptors, promotes angiogenesis, modulates nitric oxide for tissue repair.',benefits:['Tendon & ligament healing','Gut lining repair (leaky gut, IBD, ulcers)','Joint inflammation reduction','Muscle tear recovery','Neuroprotective effects'],dosing:{'Typical Dose':'250–500 mcg/day','Frequency':'Once or twice daily','Timing':'Near injury site; fasted or fed','Cycle':'4–8 weeks on, 2–4 off'},research:['Animal studies show tendon-to-bone healing acceleration','Gastroprotective effects in multiple rat models','Counteracts NSAID-induced gut damage'],tags:['Gut Health','Tendon Repair','Anti-inflammatory','Angiogenesis'],caution:'Not FDA approved. Human clinical data limited. Consult a physician.'},
+  'TB-500':{mech:'Synthetic fragment of Thymosin Beta-4. Promotes actin upregulation, cell migration, angiogenesis. Systemic body-wide reach.',benefits:['Systemic muscle & connective tissue repair','Reduces inflammation & fibrosis','Improves flexibility & range of motion','Cardiac tissue repair','Hair growth'],dosing:{'Typical Dose':'2–2.5 mg/dose','Frequency':'2×/wk loading, then 1×/wk','Timing':'SubQ or IM, any time','Cycle':'4–6 wk loading, then maintenance'},research:['Reduces myocardial infarction damage in animals','Promotes wound healing, reduces scarring','Actin sequestering reduces inflammation markers'],tags:['Systemic Repair','Muscle Recovery','Anti-fibrotic','Cardiac'],caution:'Not FDA approved. Banned by WADA. Medical supervision required.'},
+  'GHK-Cu':{mech:'Copper-binding tripeptide naturally in human plasma. Activates wound healing genes, promotes collagen and elastin synthesis, potent antioxidant.',benefits:['Skin tightening & anti-aging','Collagen & elastin production','Wound healing acceleration','Hair follicle stimulation','Nerve regeneration support'],dosing:{'Typical Dose':'1–2 mg/day','Frequency':'Daily or 5×/week','Timing':'SubQ near target area; topical for skin','Cycle':'8–12 weeks'},research:['Upregulates 30+ genes in tissue remodeling','Improves skin laxity in human studies','Activates TGF-β for collagen synthesis'],tags:['Anti-aging','Collagen','Skin','Wound Healing','Hair'],caution:'Generally well tolerated. Injection site reactions possible.'},
+  'KPV':{mech:'C-terminal tripeptide of alpha-MSH. Binds MC1R/MC3R receptors for anti-inflammatory and gut-protective effects without hormonal side effects.',benefits:['Gut inflammation reduction (Crohn\'s, colitis)','Systemic anti-inflammatory','Wound healing support','Immune modulation','Antimicrobial'],dosing:{'Typical Dose':'500 mcg–1 mg/day','Frequency':'Once daily','Timing':'SubQ or oral for gut effects','Cycle':'4–8 weeks'},research:['Reduces colitis severity in murine models','Inhibits NF-κB pathway to suppress cytokines','Antimicrobial vs S. aureus and C. albicans'],tags:['Gut Health','Anti-inflammatory','Immune','Antimicrobial'],caution:'Preclinical data predominant. Physician oversight recommended.'},
+  'NAD+':{mech:'Coenzyme in every cell essential for ATP production, DNA repair via PARP enzymes, and sirtuin activation for longevity pathways.',benefits:['Cellular energy & mitochondrial function','DNA repair activation','Anti-aging via sirtuins','Cognitive clarity & brain energy','Addiction & withdrawal support'],dosing:{'Typical Dose':'25–100 mg SubQ or 250–500 mg IV','Frequency':'Daily SubQ or weekly IV','Timing':'Morning preferred; may cause stimulation','Cycle':'Ongoing or 30-day loading cycles'},research:['NAD+ declines ~50% between ages 40–60','Sirtuin activation linked to lifespan extension in animals','IV NAD+ used clinically in addiction medicine'],tags:['Longevity','Energy','DNA Repair','Mitochondria','Cognitive'],caution:'IV should be given slowly to avoid flushing/nausea. SubQ well tolerated.'},
+  'Selank':{mech:'Synthetic heptapeptide analog of tuftsin. Modulates GABA-A expression, increases BDNF, serotonin, and dopamine. Anxiolysis without sedation or dependence.',benefits:['Anxiety reduction without sedation','Cognitive enhancement & memory','Mood stabilization','Immune modulation','No withdrawal or dependence'],dosing:{'Typical Dose':'250–300 mcg/dose','Frequency':'2–3×/day intranasal','Timing':'1–2 drops per nostril','Cycle':'2–4 weeks, then break'},research:['Increases BDNF expression in animal models','Reduces anxiety comparably to benzodiazepines in Russian trials','Improves learning and memory consolidation in rodents'],tags:['Anxiolytic','Nootropic','BDNF','Mood','Non-addictive'],caution:'Not FDA approved. Clinical data largely from Russian studies.'},
+  'Semax':{mech:'ACTH(4-7) analog increasing BDNF, NGF, and VEGF expression. Enhances dopaminergic and serotonergic tone. Neuroprotective and nootropic.',benefits:['Cognitive enhancement & focus','Neuroprotection after stroke or injury','BDNF & NGF upregulation','Anti-depressant effects','Improved working memory'],dosing:{'Typical Dose':'300–600 mcg/day','Frequency':'Once or twice daily intranasal','Timing':'Morning; may cause stimulation','Cycle':'2–4 weeks, then break'},research:['Used clinically in Russia for stroke recovery','Increases BDNF 4× in some animal studies','Improves memory in rodent maze studies'],tags:['Nootropic','BDNF','Neuroprotection','Focus','Stroke Recovery'],caution:'Not FDA approved. May cause overstimulation at high doses. Avoid evening use.'},
+  'PT-141':{mech:'Melanocortin receptor agonist (MC3R/MC4R) acting centrally in hypothalamus to increase sexual arousal — unlike PDE5 inhibitors which act peripherally.',benefits:['Increased libido in men and women','Sexual dysfunction treatment','Centrally-acting — works on brain','Effective in both genders','HSDD treatment'],dosing:{'Typical Dose':'1–2 mg/dose','Frequency':'As needed, max 2–3×/week','Timing':'SubQ 1–2 hours before activity','Cycle':'As needed'},research:['FDA approved analog (Vyleesi) for HSDD','Phase II trials show efficacy in both genders','Works where PDE5 inhibitors fail'],tags:['Libido','Sexual Health','Melanocortin','FDA-Adjacent'],caution:'May cause nausea, flushing, blood pressure increase. Avoid with cardiovascular conditions without physician clearance.'},
+  'Epitalon':{mech:'Synthetic tetrapeptide stimulating pineal melatonin production and activating telomerase, potentially extending telomere length and cellular lifespan.',benefits:['Telomere elongation','Anti-aging & longevity','Sleep quality improvement','Melatonin regulation','Antioxidant effects'],dosing:{'Typical Dose':'5–10 mg/day','Frequency':'Daily for 10–20 day cycles','Timing':'Evening SubQ or IM','Cycle':'10–20 days, 2–3×/year'},research:['Russian studies show lifespan increase in animal models','Activates telomerase in somatic cells','Restores melatonin in elderly subjects'],tags:['Longevity','Telomeres','Sleep','Pineal','Anti-aging'],caution:'Limited Western clinical data. Long-term effects unknown. Use under medical supervision.'},
+  'CJC-1295':{mech:'GHRH analog with DAC technology binding albumin, extending half-life to 7–8 days. Stimulates sustained pituitary GH release.',benefits:['Increased GH and IGF-1 levels','Muscle growth & fat loss','Improved recovery','Deep sleep enhancement','Bone density support'],dosing:{'Typical Dose':'1–2 mg/week','Frequency':'Once weekly SubQ','Timing':'Evening may enhance GH pulse','Cycle':'8–12 weeks, then 4 weeks off'},research:['Sustained GH elevation for 7+ days per injection','IGF-1 increases 200–300% in clinical trials','Synergistic with Ipamorelin for amplified GH release'],tags:['GH Release','Muscle','Fat Loss','Recovery','Anti-aging'],caution:'Water retention, joint pain, insulin resistance at high doses. Contraindicated in active cancer.'},
+  'Ipamorelin':{mech:'Selective GH secretagogue and ghrelin receptor agonist. Stimulates pulsatile GH release with minimal cortisol or prolactin effect.',benefits:['Clean GH pulse stimulation','Muscle growth & fat loss','Improved sleep quality','Minimal side effect profile','Recovery enhancement'],dosing:{'Typical Dose':'200–300 mcg/dose','Frequency':'2–3×/day or once before bed','Timing':'Fasted; most effective before sleep','Cycle':'8–12 weeks'},research:['Clinical trials confirm selective GH without cortisol elevation','Synergistic with CJC-1295 for amplified GH','Improves body composition in human studies'],tags:['GH Release','Clean Profile','Sleep','Muscle','Anti-aging'],caution:'Generally very well tolerated. Water retention possible. Avoid in active cancer history.'},
+  'Thymosin Alpha-1':{mech:'Naturally occurring 28 amino acid peptide from thymic tissue. Enhances T-cell differentiation, NK cell activity, and dendritic cell function.',benefits:['Immune system enhancement','Antiviral & antibacterial defense','Cancer adjunct therapy support','Autoimmune modulation','Vaccine response enhancement'],dosing:{'Typical Dose':'1.5 mg/dose','Frequency':'2×/week SubQ','Timing':'Any time','Cycle':'4–6 weeks, repeat as needed'},research:['FDA orphan drug designation for DiGeorge syndrome','Used in Italy/Asia for hepatitis B/C','Enhances COVID-19 recovery in clinical studies'],tags:['Immune','Antiviral','Cancer Support','T-cell'],caution:'Approved in 37+ countries. Not FDA approved in US.'},
+  'Thymosin Alpha-4':{mech:'Thymosin Alpha-4 is studied for its role in actin regulation, cell migration, and tissue remodeling. It supports wound healing, reduces inflammation, and aids recovery of muscle and connective tissue.',benefits:['Systemic tissue and muscle repair','Reduced inflammation and fibrosis','Improved flexibility and recovery','Support for injury healing','Potential cardiac and soft-tissue benefits'],dosing:{'Typical Dose':'1.5–2.5 mg/dose','Frequency':'2×/week loading, then weekly or as directed','Timing':'SubQ preferred','Cycle':'4–6 weeks loading, then maintenance or as needed'},research:['Related thymosin peptides show accelerated wound healing in animal models','Supports cell migration to injury sites','Anti-inflammatory cytokine modulation reported in preclinical work'],tags:['Tissue Repair','Recovery','Anti-inflammatory','Muscle'],caution:'Research peptide. Not FDA approved for these uses. Limited large-scale human trials. Use under medical supervision. Theoretical caution with active malignancy.'},
+  'DSIP':{mech:'Nonapeptide modulating sleep architecture by enhancing delta slow-wave sleep. Stress-protective and antioxidant properties.',benefits:['Improved deep sleep quality','Sleep onset assistance','Stress & cortisol reduction','Antioxidant effects','Normalizes disturbed sleep patterns'],dosing:{'Typical Dose':'100 mcg/dose','Frequency':'Once nightly SubQ','Timing':'30–60 min before bed','Cycle':'5–10 nights, then break'},research:['Isolated 1977; shown to induce delta sleep','Reduces cortisol and ACTH in stress models','Antioxidant effects in rodent studies'],tags:['Sleep','Delta Wave','Cortisol','Stress','Recovery'],caution:'Limited human clinical data. Primarily preclinical research.'},
+  'Melanotan II':{mech:'Non-selective melanocortin agonist (MC1R–MC5R). Stimulates melanogenesis and activates MC3R/MC4R for libido and appetite suppression.',benefits:['Skin tanning without UV','Libido enhancement','Appetite suppression','Erectile function','UV protection through melanin'],dosing:{'Typical Dose':'0.25–0.5 mg/dose','Frequency':'Daily loading then maintenance','Timing':'SubQ; titrate up slowly','Cycle':'Loading then maintenance as needed'},research:['Significant tanning efficacy in clinical trials','Induces spontaneous erections in men','MC4R responsible for appetite suppression'],tags:['Tanning','Libido','Melanocortin','Appetite'],caution:'Nausea, flushing, mole darkening possible. Monitor skin lesions carefully.'},
+  'Oxytocin':{mech:'Endogenous neuropeptide from hypothalamus. Acts on oxytocin receptors throughout brain and body to regulate bonding, stress response, and inflammation.',benefits:['Social bonding & trust','Anxiety & stress reduction','Wound healing acceleration','Anti-inflammatory','Improved empathy & social function'],dosing:{'Typical Dose':'10–40 IU intranasal','Frequency':'As needed, 1–3×/day','Timing':'20–45 min before social situations','Cycle':'As needed; avoid chronic high-dose'},research:['Increases trust and reduces social anxiety in human trials','Accelerates wound healing in animal models','Reduces cortisol response to social stress'],tags:['Social','Anxiety','Bonding','Anti-inflammatory'],caution:'Chronic use may downregulate receptors. Physician guidance for psychiatric conditions.'},
+  'LL-37':{mech:'Human cathelicidin antimicrobial peptide disrupting bacterial/fungal membranes while modulating immune response and promoting angiogenesis.',benefits:['Broad-spectrum antimicrobial','Biofilm disruption','Wound healing promotion','Immune modulation','Antiviral properties'],dosing:{'Typical Dose':'1 mg/day SubQ','Frequency':'Daily or every other day','Timing':'Near wound/infection site if applicable','Cycle':'2–4 weeks'},research:['Effective against MRSA biofilms in vitro','Promotes keratinocyte migration for wound closure','Reduced in rosacea and eczema patients'],tags:['Antimicrobial','Biofilm','Wound Healing','Immune','Antiviral'],caution:'Pro-inflammatory at high doses. Use cautiously with cancer history.'},
+  'Cerebrolysin':{mech:'Peptide mixture from porcine brain proteins with BDNF, NGF, CNTF, GDNF-like factors promoting neuronal survival, synaptic plasticity, neurogenesis.',benefits:['Cognitive enhancement','TBI & stroke recovery','Alzheimer\'s & dementia support','Neurogenesis stimulation','Memory & learning improvement'],dosing:{'Typical Dose':'5–10 mL/dose','Frequency':'Daily IM for 10–20 day cycles','Timing':'Morning IM injection','Cycle':'10–20 days, 2–4×/year'},research:['Approved in 50+ countries for dementia/stroke rehab','Multiple RCTs show cognitive benefit in Alzheimer\'s','Shown to increase BDNF and NGF levels'],tags:['Nootropic','Neuroprotection','BDNF','NGF','Dementia','TBI'],caution:'Porcine-derived. IM only. Physician administration recommended.'},
+  'Tesamorelin':{mech:'Synthetic GHRH analog with trans-3-hexenoic acid group extending stability. Stimulates pituitary to release GH in a pulsatile physiological pattern, raising IGF-1 and reducing visceral fat.',benefits:['Visceral fat reduction (especially abdominal)','Increased IGF-1 and GH levels','Improved body composition','Cognitive function enhancement','FDA approved for lipodystrophy','Cardiovascular risk marker improvement'],dosing:{'Typical Dose':'1–2 mg/day','Frequency':'Once daily SubQ','Timing':'Evening on empty stomach','Cycle':'6–12 months (FDA); 8–12 weeks off-label'},research:['FDA approved (Egrifta) for HIV-associated lipodystrophy','Phase III trials show significant visceral fat reduction','Improves cognitive scores in adults with abdominal obesity','Raises IGF-1 by 100–200% in clinical studies','Preserves pulsatile GH — more physiological than exogenous GH'],tags:['Fat Loss','GH Release','FDA Approved','IGF-1','Cognitive','Body Composition'],caution:'FDA approved for HIV lipodystrophy. Off-label use common. May cause fluid retention, joint pain, glucose elevation. Contraindicated in active cancer.'},
+};
+
+// Runtime lists (builtins + custom)
+let P = [...BUILTIN_P];
+let INFO = {...BUILTIN_INFO};
+let customPeptides = []; // persisted customs
+
+let cards = [], nid = 1;
+const SK = 'peptide_calc_v73';
+const SK_CUSTOM = 'peptide_custom_v73';
+
+function save(){
+  try{
+    localStorage.setItem(SK, JSON.stringify({cards, nid}));
+    const el = document.getElementById('saveInd');
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 1800);
+  }catch(e){}
+}
+
+function saveCustoms(){
+  try{ localStorage.setItem(SK_CUSTOM, JSON.stringify(customPeptides)); }catch(e){}
+}
+
+function loadCustoms(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SK_CUSTOM) || '[]');
+    if(Array.isArray(d)){
+      customPeptides = d;
+      d.forEach(cp => {
+        // avoid duplicates by name
+        if(!P.find(p => p.name === cp.name)){
+          P.push(cp);
+          if(cp.info) INFO[cp.name] = cp.info;
+        }
+      });
+    }
+  }catch(e){}
+}
+
+function exportStack(){
+  const data = {
+    version: 3,
+    exported: new Date().toISOString(),
+    cards,
+    nid,
+    customPeptides
+  };
+  const json = JSON.stringify(data, null, 2);
+  // Copy to clipboard
+  navigator.clipboard.writeText(json).then(() => {
+    alert('Stack exported to clipboard!\n\nPaste it into a notes app or into the Import box on another device.');
+  }).catch(() => {
+    // Fallback: show in prompt so user can copy manually
+    prompt('Copy this JSON (Ctrl+C / Cmd+C):', json);
+  });
+}
+
+function importStack(){
+  const json = prompt('Paste the exported stack JSON here:');
+  if(!json || !json.trim()) return;
+  try{
+    const data = JSON.parse(json);
+    if(!data.cards || !Array.isArray(data.cards)){
+      alert('Invalid stack data.');
+      return;
+    }
+    if(!confirm('This will replace your current stack with the imported one. Continue?')) return;
+
+    // Restore custom peptides first
+    if(Array.isArray(data.customPeptides)){
+      customPeptides = data.customPeptides;
+      // Rebuild P and INFO with customs
+      P = [...BUILTIN_P];
+      INFO = {...BUILTIN_INFO};
+      customPeptides.forEach(cp => {
+        if(!P.find(p => p.name === cp.name)){
+          P.push(cp);
+          if(cp.info) INFO[cp.name] = cp.info;
+        }
+      });
+      saveCustoms();
+    }
+
+    cards = data.cards;
+    nid = data.nid || (Math.max(...cards.map(c => c.id), 0) + 1);
+    cards.forEach(c => {
+      if(c.am === undefined) c.am = true;
+      if(c.pm === undefined) c.pm = false;
+    });
+
+    save();
+    renderCards();
+    updSummary();
+    alert('Stack imported successfully!');
+  }catch(e){
+    alert('Import failed. Make sure you pasted valid JSON.\n\n' + e.message);
+  }
+}
+
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SK) || 'null');
+    if(!d || !d.cards || !d.cards.length) return false;
+    cards = d.cards;
+    cards.forEach(c => {
+      if(c.am === undefined) c.am = true;
+      if(c.pm === undefined) c.pm = false;
+    });
+    nid = d.nid || Math.max(...d.cards.map(c => c.id)) + 1;
+    return true;
+  }catch(e){ return false; }
+}
+
+function calc(c){
+  const vm = parseFloat(c.vial) || 0, bm = parseFloat(c.bac) || 1;
+  let dm = parseFloat(c.dose) || 0;
+  if(c.unit === 'mcg') dm /= 1000;
+  const conc = bm > 0 ? vm / bm : 0;
+  const ml = conc > 0 ? dm / conc : 0;
+  const units = ml * 100;
+  const dpv = dm > 0 ? vm / dm : 0;
+  const dw = c.days.length;
+  const vc = parseFloat(c.cost) || 0;
+  const cpd = dpv > 0 ? vc / dpv : 0;
+  const wc = cpd * dw;
+  const lng = dw > 0 ? dpv / dw : 0;
+  return {conc, ml, units, dpv, cpd, wc, lng, dm};
+}
+
+function fmtL(v){ if(v <= 0) return '—'; return v < 1 ? (v*7).toFixed(1)+' days' : v.toFixed(1)+' wks'; }
+function fmtM(v){ return v > 0 ? v.toFixed(3) : '—'; }
+function fmtU(v){ return v > 0 ? v.toFixed(1)+' u' : '—'; }
+
+function updateDateLabel(){
+  const d = viewDate.getDay();
+  const isToday = isSameDay(viewDate, new Date());
+  document.getElementById('dateLabel').textContent =
+    (isToday ? 'TODAY — ' : '') + DNAMES[d] + ', ' + MONTHS[viewDate.getMonth()] + ' ' + viewDate.getDate() + ', ' + viewDate.getFullYear();
+  document.getElementById('todayTitle').textContent =
+    '💉 SCHEDULED FOR ' + (isToday ? 'TODAY' : DNAMES[d].toUpperCase()) + ' — ' + MONTHS[viewDate.getMonth()].toUpperCase() + ' ' + viewDate.getDate();
+}
+
+function isSameDay(a, b){
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function changeDay(delta){
+  viewDate.setDate(viewDate.getDate() + delta);
+  updateDateLabel();
+  updSummary();
+}
+
+function goToday(){
+  viewDate = new Date();
+  viewDate.setHours(12,0,0,0);
+  updateDateLabel();
+  updSummary();
+}
+
+function cardHTML(c, idx){
+  const p = P[c.pidx];
+  if(!p) return '';
+  const r = calc(c);
+  const opts = P.map((pp,i) => `<option value="${i}"${i===c.pidx?' selected':''}>${pp.name}</option>`).join('');
+  const ropts = ['SubQ','IM','SubQ/IM','Intranasal'].map(r => `<option value="${r}"${r===c.route?' selected':''}>${r}</option>`).join('');
+  const dbts = DAYS.map((d,i) => `<button class="dbtn${c.days.includes(i)?' on':''}" onclick="tDay(${c.id},${i})">${d}</button>`).join('');
+  const re = c.route === 'Intranasal' ? '🫁' : '💉';
+
+  return `<div class="cbar" style="background:${p.color||'#6c63ff'}"></div>
+<div class="cheader"><span class="cnum">PEPTIDE ${idx+1}</span><button class="xbtn" onclick="remCard(${c.id})">✕</button></div>
+<div class="cbody">
+  <select class="psel" onchange="chPep(${c.id},parseInt(this.value))">${opts}</select>
+  <div class="pdesc">${p.desc||''}</div>
+  <div class="row2">
+    <div class="fg"><label class="lbl">Vial Size (mg)</label><input class="inp" type="number" inputmode="decimal" min="0" step="any" value="${c.vial}" oninput="num(${c.id},'vial',this.value)"></div>
+    <div class="fg"><label class="lbl">BAC Water (mL)</label><input class="inp" type="number" inputmode="decimal" min="0" step="any" value="${c.bac}" oninput="num(${c.id},'bac',this.value)"><span class="cpill" id="conc-${c.id}">= ${r.conc>0?r.conc.toFixed(2)+' mg/mL':'—'}</span></div>
+  </div>
+  <div class="row2">
+    <div class="fg"><label class="lbl">Dose</label><input class="inp" type="number" inputmode="decimal" min="0" step="any" value="${c.dose}" oninput="num(${c.id},'dose',this.value)"><div class="utog"><button class="ubtn${c.unit==='mg'?' on':''}" id="umg-${c.id}" onclick="setU(${c.id},'mg')">mg</button><button class="ubtn${c.unit==='mcg'?' on':''}" id="umcg-${c.id}" onclick="setU(${c.id},'mcg')">mcg</button></div></div>
+    <div class="fg"><label class="lbl">Route</label><select class="inp" onchange="chRoute(${c.id},this.value)">${ropts}</select></div>
+  </div>
+  <div class="dlbl">DAYS / WEEK</div>
+  <div class="drow" id="drow-${c.id}">${dbts}</div>
+  <div class="dlbl">TIME OF DAY</div>
+  <div class="ampmrow">
+    <button class="ampmbtn${c.am?' on':''}" id="am-${c.id}" onclick="togAmPm(${c.id},'am')">AM</button>
+    <button class="ampmbtn${c.pm?' on':''}" id="pm-${c.id}" onclick="togAmPm(${c.id},'pm')">PM</button>
+  </div>
+  <div class="drawbox"><div class="drawlbl">💉 DRAW AMOUNT</div>
+    <div class="drawml" id="ml-${c.id}">${fmtM(r.ml)}</div>
+    <div class="drawsub" id="units-${c.id}">${fmtU(r.units)} &nbsp;·&nbsp; ${re} ${c.route}</div>
+  </div>
+  <div class="costbox"><div class="costhdr">💰 VIAL COST &amp; LONGEVITY</div>
+    <div class="costinp">
+      <div class="fg"><label class="lbl">Vial Cost ($)</label><input class="inp" type="number" inputmode="decimal" min="0" step="any" value="${c.cost}" oninput="num(${c.id},'cost',this.value)"></div>
+      <div class="fg"><label class="lbl">Doses/Vial</label><input class="inp" type="text" readonly id="dpv-${c.id}" value="${r.dpv>0?r.dpv.toFixed(1):'—'}" style="opacity:.6;cursor:default"></div>
+    </div>
+    <div class="coststats">
+      <div class="cs"><span class="csv" id="cpd-${c.id}">${r.cpd>0?'$'+r.cpd.toFixed(2):'—'}</span><span class="csl">Per Dose</span></div>
+      <div class="cs"><span class="csv" id="wc-${c.id}">${r.wc>0?'$'+r.wc.toFixed(2):'—'}</span><span class="csl">Per Week</span></div>
+      <div class="cs"><span class="csv wv" id="lng-${c.id}">${fmtL(r.lng)}</span><span class="csl">Vial Lasts</span></div>
+    </div>
+  </div>
+  <button class="lmbtn" id="lmbtn-${c.id}" onclick="togLearn(${c.id})">📖 Learn More <span class="lmchev">▼</span></button>
+  <div class="lmpanel" id="lmpanel-${c.id}"></div>
+</div>`;
+}
+
+function updOutputs(id){
+  const c = cards.find(x => x.id === id); if(!c) return;
+  const r = calc(c), re = c.route === 'Intranasal' ? '🫁' : '💉';
+  const g = i => document.getElementById(i);
+  if(g('conc-'+id)) g('conc-'+id).textContent = '= ' + (r.conc > 0 ? r.conc.toFixed(2)+' mg/mL' : '—');
+  if(g('ml-'+id)) g('ml-'+id).textContent = fmtM(r.ml);
+  if(g('units-'+id)) g('units-'+id).innerHTML = fmtU(r.units) + ' &nbsp;·&nbsp; ' + re + ' ' + c.route;
+  if(g('dpv-'+id)) g('dpv-'+id).value = r.dpv > 0 ? r.dpv.toFixed(1) : '—';
+  if(g('cpd-'+id)) g('cpd-'+id).textContent = r.cpd > 0 ? '$'+r.cpd.toFixed(2) : '—';
+  if(g('wc-'+id)) g('wc-'+id).textContent = r.wc > 0 ? '$'+r.wc.toFixed(2) : '—';
+  if(g('lng-'+id)) g('lng-'+id).textContent = fmtL(r.lng);
+}
+
+function num(id,f,v){ const c = cards.find(x => x.id === id); if(!c) return; c[f] = v; updOutputs(id); updSummary(); save(); }
+function chPep(id,pi){ const c = cards.find(x => x.id === id); if(!c) return; const p = P[pi]; c.pidx = pi; c.vial = p.vial; c.bac = p.bac; c.dose = p.dose; c.unit = p.unit; c.route = p.route; renderCards(); updSummary(); save(); }
+function chRoute(id,v){ const c = cards.find(x => x.id === id); if(!c) return; c.route = v; updOutputs(id); updSummary(); save(); }
+function tDay(id,di){ const c = cards.find(x => x.id === id); if(!c) return; const i = c.days.indexOf(di); if(i >= 0) c.days.splice(i,1); else c.days.push(di); const w = document.getElementById('drow-'+id); if(w) w.querySelectorAll('.dbtn').forEach((b,i) => b.classList.toggle('on', c.days.includes(i))); updOutputs(id); updSummary(); save(); }
+function setU(id,u){ const c = cards.find(x => x.id === id); if(!c) return; c.unit = u; document.getElementById('umg-'+id)?.classList.toggle('on', u==='mg'); document.getElementById('umcg-'+id)?.classList.toggle('on', u==='mcg'); updOutputs(id); updSummary(); save(); }
+
+function togAmPm(id, which){
+  const c = cards.find(x => x.id === id); if(!c) return;
+  if(which === 'am') c.am = !c.am;
+  if(which === 'pm') c.pm = !c.pm;
+  if(!c.am && !c.pm) c.am = true;
+  document.getElementById('am-'+id)?.classList.toggle('on', c.am);
+  document.getElementById('pm-'+id)?.classList.toggle('on', c.pm);
+  updSummary();
+  save();
+}
+
+function togLearn(id){
+  const c = cards.find(x => x.id === id); if(!c) return;
+  const btn = document.getElementById('lmbtn-'+id), pan = document.getElementById('lmpanel-'+id);
+  if(!btn || !pan) return;
+  const open = pan.classList.contains('open');
+  if(open){ pan.classList.remove('open'); btn.classList.remove('open'); return; }
+
+  const p = P[c.pidx], info = INFO[p.name];
+  if(!info){
+    pan.innerHTML = '<p style="color:var(--muted);font-size:.78rem;padding:8px 0">No research data available yet. You can add it when creating a custom peptide.</p>';
+  } else {
+    const tags = (info.tags||[]).map(t => '<span class="tag">'+t+'</span>').join('');
+    const bens = (info.benefits||[]).map(b => '<li>'+b+'</li>').join('');
+    const res = (info.research||[]).map(r => '<li>'+r+'</li>').join('');
+    const dos = Object.entries(info.dosing||{}).map(([k,v]) => '<div class="dc"><div class="dclbl">'+k+'</div><div class="dcval">'+v+'</div></div>').join('');
+    pan.innerHTML =
+      (info.mech ? '<div class="lmsec"><div class="lmstitle">⚙️ Mechanism</div><div class="lmsbody">'+info.mech+'</div></div>' : '') +
+      (bens ? '<div class="lmsec"><div class="lmstitle">✅ Key Benefits</div><div class="lmsbody"><ul>'+bens+'</ul></div></div>' : '') +
+      (dos ? '<div class="lmsec"><div class="lmstitle">💊 Dosing Guidelines</div><div class="dgrid">'+dos+'</div></div>' : '') +
+      (res ? '<div class="lmsec"><div class="lmstitle">🔬 Research Highlights</div><div class="lmsbody"><ul>'+res+'</ul></div></div>' : '') +
+      (tags ? '<div class="lmsec">'+tags+'</div>' : '') +
+      (info.caution ? '<div class="caution">⚠️ '+info.caution+'</div>' : '');
+  }
+  pan.classList.add('open');
+  btn.classList.add('open');
+}
+
+function addCard(pi=0){
+  const p = P[pi] || P[0];
+  const id = nid++;
+  cards.push({id, pidx:pi, vial:p.vial, bac:p.bac, dose:p.dose, unit:p.unit, route:p.route, days:[0,1,2,3,4,5,6], am:true, pm:false, cost:50});
+  renderCards(); updSummary(); save();
+}
+function remCard(id){ if(cards.length===1 && !confirm('Remove last peptide?')) return; cards = cards.filter(c => c.id !== id); renderCards(); updSummary(); save(); }
+function clearStack(){ if(!confirm('Clear all cards and reset to defaults?')) return; localStorage.removeItem(SK); cards=[]; nid=1; addCard(0); addCard(1); addCard(2); }
+
+function renderCards(){
+  const g = document.getElementById('cardsGrid');
+  g.innerHTML = '';
+  cards.forEach((c,i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = cardHTML(c,i);
+    g.appendChild(el);
+  });
+}
+
+function updSummary(){
+  const viewDay = viewDate.getDay();
+  const inj = cards.filter(c => c.route !== 'Intranasal');
+  const nas = cards.filter(c => c.route === 'Intranasal');
+  const sml = inj.reduce((s,c) => s + calc(c).ml, 0);
+  const nml = nas.reduce((s,c) => s + calc(c).ml, 0);
+
+  document.getElementById('syrTotal').textContent = inj.length ? sml.toFixed(3)+' mL' : '—';
+  document.getElementById('syrSub').textContent = inj.length ? (sml*100).toFixed(1)+' units · '+inj.length+' peptide(s)' : 'No injectable peptides.';
+  const fb = document.getElementById('syrFit');
+  if(inj.length){
+    const ok = sml <= 1;
+    fb.innerHTML = '<span class="fitbadge '+(ok?'fitok':'fitwarn')+'">'+(ok?'✓ Fits in one syringe':'⚠ Exceeds 1 mL — split syringes')+'</span>';
+  } else fb.innerHTML = '';
+
+  document.getElementById('nasalTotal').textContent = nas.length ? nml.toFixed(3)+' mL' : '—';
+  document.getElementById('nasalSub').textContent = nas.length ? 'Load into MAD atomizer — split per nostril' : 'No intranasal peptides.';
+
+  const all = [...inj, ...nas], tot = (sml + nml) || 1;
+  const dw = document.getElementById('diagWrap');
+  if(!all.length){
+    dw.innerHTML = '<div class="empty">Add peptides to see diagrams.</div>';
+  } else {
+    dw.innerHTML = all.map(c => {
+      const pp = P[c.pidx], r = calc(c), pct = Math.min(100, (r.ml/tot)*100), em = c.route==='Intranasal'?'🫁':'💉';
+      return '<div class="diagrow"><span class="diagname">'+em+' '+(pp?pp.name:'?')+'</span><div class="diagbar"><div class="diagfill" style="width:'+pct+'%;background:'+(pp?pp.color:'#6c63ff')+'"></div></div><span class="diagval">'+r.units.toFixed(1)+'u</span></div>';
+    }).join('');
+  }
+
+  const lb = document.getElementById('longevityBody');
+  if(!cards.length){
+    lb.innerHTML = '<tr><td colspan="7" class="empty">No peptides configured.</td></tr>';
+  } else {
+    lb.innerHTML = cards.map(c => {
+      const pp = P[c.pidx], r = calc(c);
+      return '<tr><td style="color:'+(pp?pp.color:'#6c63ff')+'">'+(pp?pp.name:'?')+'</td><td>'+(r.dpv>0?r.dpv.toFixed(1):'—')+'</td><td>'+c.days.length+'×</td><td class="wv">'+fmtL(r.lng)+'</td><td>$'+(parseFloat(c.cost)||0).toFixed(2)+'</td><td class="gv">'+(r.cpd>0?'$'+r.cpd.toFixed(2):'—')+'</td><td class="gv">'+(r.wc>0?'$'+r.wc.toFixed(2):'—')+'</td></tr>';
+    }).join('');
+  }
+
+  const tot2 = cards.reduce((s,c) => s + calc(c).wc, 0);
+  document.getElementById('weeklyTotal').textContent = '$'+tot2.toFixed(2);
+
+  // Today / selected day with AM/PM
+  const tod = cards.filter(c => c.days.includes(viewDay));
+  const amList = tod.filter(c => c.am);
+  const pmList = tod.filter(c => c.pm);
+  const tc = document.getElementById('todayContent');
+
+  if(!tod.length){
+    tc.innerHTML = '<div class="empty">No peptides scheduled for this day.</div>';
+  } else {
+    let html = '';
+    function renderGroup(list, title, icon){
+      if(!list.length) return '';
+      let rows = list.map(c => {
+        const pp = P[c.pidx], r = calc(c);
+        const rc = c.route==='Intranasal'?'rb-n':c.route==='IM'?'rb-i':'rb-s';
+        const re = c.route==='Intranasal'?'🫁':'💉';
+        const doseStr = (parseFloat(c.dose)||0) + ' ' + c.unit;
+        return '<tr><td style="color:'+(pp?pp.color:'#6c63ff')+'">'+(pp?pp.name:'?')+'</td><td>'+doseStr+'</td><td><span class="rbadge '+rc+'">'+re+' '+c.route+'</span></td><td>'+(r.conc>0?r.conc.toFixed(2)+' mg/mL':'—')+'</td><td>'+(r.units>0?r.units.toFixed(1):'—')+'</td><td>'+(r.ml>0?r.ml.toFixed(3):'—')+'</td></tr>';
+      }).join('');
+      return `<div class="ampmsec">
+        <div class="ampmtitle">${icon} ${title} <span>(${list.length})</span></div>
+        <div class="tblwrap"><table>
+          <thead><tr><th>Peptide</th><th>Dose</th><th>Route</th><th>Conc.</th><th>Units</th><th>mL</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </div>`;
+    }
+    html += renderGroup(amList, 'AM / Morning', '🌅');
+    html += renderGroup(pmList, 'PM / Evening', '🌙');
+    if(!amList.length && !pmList.length){
+      html = '<div class="empty">Peptides are scheduled this day but neither AM nor PM is selected.</div>';
+    }
+    tc.innerHTML = html;
+  }
+}
+
+/* ========== Custom Peptide Modal ========== */
+function openCustomModal(){
+  document.getElementById('customModal').classList.add('open');
+  // reset form
+  document.getElementById('cName').value = '';
+  document.getElementById('cDesc').value = '';
+  document.getElementById('cVial').value = 10;
+  document.getElementById('cBac').value = 2;
+  document.getElementById('cDose').value = 1;
+  document.getElementById('cUnit').value = 'mg';
+  document.getElementById('cRoute').value = 'SubQ';
+  document.getElementById('cColor').value = '#6c63ff';
+  document.getElementById('cMech').value = '';
+  document.getElementById('cBenefits').value = '';
+  document.getElementById('cTypDose').value = '';
+  document.getElementById('cFreq').value = '';
+  document.getElementById('cCaution').value = '';
+}
+
+function closeCustomModal(){
+  document.getElementById('customModal').classList.remove('open');
+}
+
+function saveCustomPeptide(){
+  const name = document.getElementById('cName').value.trim();
+  if(!name){ alert('Peptide name is required.'); return; }
+  if(P.find(p => p.name.toLowerCase() === name.toLowerCase())){
+    alert('A peptide with that name already exists.'); return;
+  }
+
+  const desc = document.getElementById('cDesc').value.trim() || name;
+  const vial = parseFloat(document.getElementById('cVial').value) || 10;
+  const bac = parseFloat(document.getElementById('cBac').value) || 2;
+  const dose = parseFloat(document.getElementById('cDose').value) || 1;
+  const unit = document.getElementById('cUnit').value;
+  const route = document.getElementById('cRoute').value;
+  const color = document.getElementById('cColor').value || '#6c63ff';
+
+  const mech = document.getElementById('cMech').value.trim();
+  const benefitsRaw = document.getElementById('cBenefits').value.trim();
+  const typDose = document.getElementById('cTypDose').value.trim();
+  const freq = document.getElementById('cFreq').value.trim();
+  const caution = document.getElementById('cCaution').value.trim();
+
+  const benefits = benefitsRaw ? benefitsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const dosing = {};
+  if(typDose) dosing['Typical Dose'] = typDose;
+  if(freq) dosing['Frequency'] = freq;
+
+  const info = (mech || benefits.length || Object.keys(dosing).length || caution) ? {
+    mech: mech || '',
+    benefits,
+    dosing,
+    research: [],
+    tags: ['Custom'],
+    caution: caution || 'Custom peptide – research thoroughly and consult a physician.'
+  } : null;
+
+  const newP = {name, color, vial, bac, dose, unit, route, desc, info};
+  P.push(newP);
+  if(info) INFO[name] = info;
+
+  customPeptides.push(newP);
+  saveCustoms();
+
+  closeCustomModal();
+  // Optionally add it to the stack immediately
+  addCard(P.length - 1);
+  alert('“' + name + '” added and placed in your stack.');
+}
+
+// Init
+loadCustoms();
+updateDateLabel();
+if(!load()){
+  addCard(0);
+  addCard(1);
+  addCard(2);
+} else {
+  renderCards();
+  updSummary();
+}
+</script>
+</body>
+</html>
