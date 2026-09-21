@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Peptide Calculator v7.5</title>
+<title>Peptide Calculator v7.6</title>
 <style>
 :root{--bg:#0f1117;--card:#1e2130;--card2:#252840;--border:#2e3250;--accent:#6c63ff;--green:#4ecca3;--warn:#ffd166;--red:#ff6b6b;--text:#e8eaf6;--muted:#8891b4;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -408,7 +408,7 @@ let INFO = {...BUILTIN_INFO};
 let customPeptides = []; // persisted customs
 
 let cards = [], nid = 1;
-const SK = 'peptide_calc_v73';
+const SK = 'peptide_calc_v76';
 const SK_CUSTOM = 'peptide_custom_v73';
 
 function save(){
@@ -674,7 +674,22 @@ function addCard(pi=0){
   renderCards(); updSummary(); save();
 }
 function remCard(id){ if(cards.length===1 && !confirm('Remove last peptide?')) return; cards = cards.filter(c => c.id !== id); renderCards(); updSummary(); save(); }
-function clearStack(){ if(!confirm('Clear all cards and reset to defaults?')) return; localStorage.removeItem(SK); cards=[]; nid=1; addCard(0); addCard(1); addCard(2); }
+function seedMyStack(){
+  cards = [
+    {id:1, pidx:0,  vial:"10",  bac:1,    dose:"1",   unit:"mg",  route:"SubQ/IM",    days:[0,1,2,3,4,5,6], am:true,  pm:false, cost:"40"},
+    {id:2, pidx:3,  vial:10,    bac:"1.5", dose:"0.6", unit:"mg",  route:"SubQ",       days:[0,1,2,3,4,5,6], am:false, pm:true,  cost:"40"},
+    {id:3, pidx:1,  vial:10,    bac:"1.5", dose:"2",   unit:"mg",  route:"SubQ/IM",    days:[4,1],           am:false, pm:true,  cost:50},
+    {id:4, pidx:12, vial:10,    bac:"2",   dose:"1.5", unit:"mg",  route:"SubQ",       days:[0,1,2,3,4,5,6], am:false, pm:true,  cost:"60"},
+    {id:5, pidx:4,  vial:"733", bac:"7.4", dose:25,    unit:"mg",  route:"SubQ",       days:[0,1,2,3,4,5,6], am:true,  pm:false, cost:50},
+    {id:6, pidx:5,  vial:"12",  bac:"4.8", dose:".25", unit:"mg",  route:"Intranasal", days:[0,1,2,3,4,5,6], am:true,  pm:true,  cost:"45"},
+    {id:7, pidx:9,  vial:"11",  bac:"3.3", dose:"200", unit:"mcg", route:"SubQ",       days:[0,1,2,3,4,5,6], am:false, pm:true,  cost:"40"}
+  ];
+  nid = 8;
+  renderCards();
+  updSummary();
+  save();
+}
+function clearStack(){ if(!confirm('Clear all cards and reset to your saved stack?')) return; localStorage.removeItem(SK); cards=[]; nid=1; seedMyStack(); }
 
 function renderCards(){
   const g = document.getElementById('cardsGrid');
@@ -975,9 +990,7 @@ loadCustoms();
 loadLog();
 updateDateLabel();
 if(!load()){
-  addCard(0);
-  addCard(1);
-  addCard(2);
+  seedMyStack();
 } else {
   renderCards();
   updSummary();
