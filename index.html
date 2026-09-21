@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Peptide Calculator v7.4</title>
+<title>Peptide Calculator v7.5</title>
 <style>
 :root{--bg:#0f1117;--card:#1e2130;--card2:#252840;--border:#2e3250;--accent:#6c63ff;--green:#4ecca3;--warn:#ffd166;--red:#ff6b6b;--text:#e8eaf6;--muted:#8891b4;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -146,6 +146,38 @@ td:first-child{font-weight:700;}
 .modal .section-title{font-size:.7rem;color:var(--accent);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:16px 0 8px;padding-top:8px;border-top:1px solid var(--border);}
 
 @media(max-width:600px){.sumgrid{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.modal .row{grid-template-columns:1fr;}}
+
+/* Weekly Schedule & Log - Calendar style */
+.weekbar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.weeklbl{font-size:.85rem;font-weight:700;color:var(--green);min-width:200px;text-align:center;}
+.weekgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px;}
+.daycard{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:120px;display:flex;flex-direction:column;}
+.daycard.today{border-color:var(--green);box-shadow:0 0 0 1px var(--green);}
+.dayhdr{padding:7px 8px;background:var(--card2);border-bottom:1px solid var(--border);text-align:center;}
+.dayname{font-size:.68rem;font-weight:800;letter-spacing:.04em;display:block;}
+.daydate{font-size:.62rem;color:var(--muted);}
+.daybody{padding:6px 7px;flex:1;overflow-y:auto;}
+.dose-row{display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:1px solid rgba(46,50,80,.4);}
+.dose-row:last-child{border-bottom:none;}
+.dose-check{width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin-top:2px;}
+.dose-info{flex:1;font-size:.68rem;line-height:1.25;}
+.dose-name{font-weight:700;}
+.dose-meta{font-size:.58rem;color:var(--muted);}
+.dose-taken{opacity:.5;}
+.dose-taken .dose-name{text-decoration:line-through;}
+.no-doses{font-size:.65rem;color:var(--muted);font-style:italic;padding:6px 0;text-align:center;}
+.ampm-label{font-size:.55rem;font-weight:700;letter-spacing:.08em;color:var(--accent);margin:4px 0 1px;text-transform:uppercase;}
+.weeknote-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:18px;}
+.weeknote-lbl{font-size:.65rem;color:var(--muted);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.weeknote{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:10px 12px;font-size:.82rem;resize:vertical;min-height:70px;}
+.weeknote:focus{outline:none;border-color:var(--accent);}
+@media(max-width:800px){
+  .weekgrid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:480px){
+  .weekgrid{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
@@ -202,6 +234,22 @@ td:first-child{font-weight:700;}
 <hr>
 <div class="seclbl" id="todayTitle">💉 SCHEDULED FOR SELECTED DAY</div>
 <div id="todayContent"><div class="empty">No peptides scheduled for this day.</div></div>
+
+<hr>
+<div class="seclbl">📅 WEEKLY SCHEDULE &amp; LOG</div>
+<div class="weekbar">
+  <button class="datebtn" onclick="changeWeek(-1)">◀ Prev Week</button>
+  <div class="weeklbl" id="weekLabel">This Week</div>
+  <button class="datebtn" onclick="changeWeek(1)">Next Week ▶</button>
+  <button class="datebtn today-btn" onclick="goThisWeek()">This Week</button>
+</div>
+<div class="weekgrid" id="weekGrid">
+  <div class="empty">Loading week…</div>
+</div>
+<div class="weeknote-wrap">
+  <div class="weeknote-lbl">📝 Week Notes</div>
+  <textarea class="weeknote" id="weekNote" placeholder="Notes for this week…" onchange="saveWeekNote(this.value)"></textarea>
+</div>
 
 <!-- Custom Peptide Modal -->
 <div class="modal-overlay" id="customModal">
@@ -303,6 +351,11 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 
 let viewDate = new Date();
 viewDate.setHours(12,0,0,0);
+
+let viewWeekStart = getMonday(new Date());
+const SK_LOG = 'peptide_log_v1';
+let logData = {};
+
 
 // Built-in peptides
 const BUILTIN_P = [
@@ -710,6 +763,7 @@ function updSummary(){
     }
     tc.innerHTML = html;
   }
+  renderWeek();
 }
 
 /* ========== Custom Peptide Modal ========== */
@@ -783,8 +837,142 @@ function saveCustomPeptide(){
   alert('“' + name + '” added and placed in your stack.');
 }
 
+
+// ========== WEEKLY LOG ==========
+function getMonday(d) {
+  const date = new Date(d);
+  date.setHours(12,0,0,0);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Monday as start
+  date.setDate(date.getDate() + diff);
+  return date;
+}
+
+function dateKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function loadLog() {
+  try {
+    logData = JSON.parse(localStorage.getItem(SK_LOG) || '{}');
+  } catch(e) { logData = {}; }
+}
+
+function saveLog() {
+  try {
+    localStorage.setItem(SK_LOG, JSON.stringify(logData));
+  } catch(e) {}
+}
+
+function changeWeek(delta) {
+  viewWeekStart.setDate(viewWeekStart.getDate() + (delta * 7));
+  renderWeek();
+}
+
+function goThisWeek() {
+  viewWeekStart = getMonday(new Date());
+  renderWeek();
+}
+
+function toggleTaken(key, cardId, period) {
+  if (!logData[key]) logData[key] = { taken: {} };
+  if (!logData[key].taken) logData[key].taken = {};
+  const id = cardId + '-' + period;
+  logData[key].taken[id] = !logData[key].taken[id];
+  saveLog();
+  renderWeek();
+}
+
+function weekKey(start) {
+  return 'week-' + dateKey(start);
+}
+
+function saveWeekNote(text) {
+  const k = weekKey(viewWeekStart);
+  if (!logData[k]) logData[k] = {};
+  logData[k].notes = text;
+  saveLog();
+}
+
+function renderWeek() {
+  const grid = document.getElementById('weekGrid');
+  const label = document.getElementById('weekLabel');
+  const noteEl = document.getElementById('weekNote');
+  if (!grid) return;
+
+  const today = new Date();
+  today.setHours(12,0,0,0);
+  const start = new Date(viewWeekStart);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+
+  const isThisWeek = dateKey(getMonday(today)) === dateKey(start);
+  label.textContent = isThisWeek
+    ? 'This Week'
+    : (MONTHS[start.getMonth()].slice(0,3) + ' ' + start.getDate() + ' – ' + MONTHS[end.getMonth()].slice(0,3) + ' ' + end.getDate());
+
+  // Week note
+  const wk = weekKey(start);
+  if (noteEl) noteEl.value = (logData[wk] && logData[wk].notes) || '';
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = dateKey(d);
+    const dayIdx = d.getDay();
+    const isToday = dateKey(d) === dateKey(today);
+    const dayLog = logData[key] || { taken: {} };
+
+    const dayCards = cards.filter(c => c.days && c.days.includes(dayIdx));
+
+    html += '<div class="daycard' + (isToday ? ' today' : '') + '">';
+    html += '<div class="dayhdr"><span class="dayname">' + (isToday ? 'TODAY' : DNAMES[dayIdx].slice(0,3).toUpperCase()) + '</span>';
+    html += '<span class="daydate">' + (d.getMonth()+1) + '/' + d.getDate() + '</span></div>';
+    html += '<div class="daybody">';
+
+    if (dayCards.length === 0) {
+      html += '<div class="no-doses">—</div>';
+    } else {
+      const amCards = dayCards.filter(c => c.am !== false);
+      const pmCards = dayCards.filter(c => c.pm === true);
+
+      if (amCards.length) {
+        html += '<div class="ampm-label">AM</div>';
+        amCards.forEach(c => {
+          const p = P[c.pidx] || {name:'?'};
+          const id = c.id + '-am';
+          const taken = !!(dayLog.taken && dayLog.taken[id]);
+          const r = calc(c);
+          html += '<div class="dose-row' + (taken ? ' dose-taken' : '') + '">';
+          html += '<input type="checkbox" class="dose-check" ' + (taken ? 'checked' : '') + ' onchange="toggleTaken(\'' + key + '\',' + c.id + ',\'am\')">';
+          html += '<div class="dose-info"><div class="dose-name" style="color:' + (p.color||'#ccc') + '">' + p.name + '</div>';
+          html += '<div class="dose-meta">' + (parseFloat(c.dose)||0) + c.unit + (r.units ? ' · ' + r.units.toFixed(0) + 'u' : '') + '</div></div></div>';
+        });
+      }
+      if (pmCards.length) {
+        html += '<div class="ampm-label">PM</div>';
+        pmCards.forEach(c => {
+          const p = P[c.pidx] || {name:'?'};
+          const id = c.id + '-pm';
+          const taken = !!(dayLog.taken && dayLog.taken[id]);
+          const r = calc(c);
+          html += '<div class="dose-row' + (taken ? ' dose-taken' : '') + '">';
+          html += '<input type="checkbox" class="dose-check" ' + (taken ? 'checked' : '') + ' onchange="toggleTaken(\'' + key + '\',' + c.id + ',\'pm\')">';
+          html += '<div class="dose-info"><div class="dose-name" style="color:' + (p.color||'#ccc') + '">' + p.name + '</div>';
+          html += '<div class="dose-meta">' + (parseFloat(c.dose)||0) + c.unit + (r.units ? ' · ' + r.units.toFixed(0) + 'u' : '') + '</div></div></div>';
+        });
+      }
+    }
+    html += '</div></div>';
+  }
+  grid.innerHTML = html;
+}
+
+
 // Init
 loadCustoms();
+loadLog();
 updateDateLabel();
 if(!load()){
   addCard(0);
@@ -794,6 +982,7 @@ if(!load()){
   renderCards();
   updSummary();
 }
+renderWeek();
 </script>
 </body>
 </html>
