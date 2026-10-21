@@ -786,6 +786,17 @@ function updSummary(){
 }
 
 /* ========== Custom Peptide Modal ========== */
+  function deleteCustom(i){
+  if(!confirm('Delete this custom peptide?')) return;
+  const name=customPeptides[i].name;
+  customPeptides.splice(i,1);
+  P=P.filter(p=>p.name!==name);
+  delete INFO[name];
+  saveCustoms();
+  renderCards();
+  openCustomModal();
+}
+
 function openCustomModal(){
   document.getElementById('customModal').classList.add('open');
   // reset form
