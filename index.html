@@ -650,7 +650,8 @@ function togLearn(id){
   const open = pan.classList.contains('open');
   if(open){ pan.classList.remove('open'); btn.classList.remove('open'); return; }
 
-  const p = P[c.pidx], info = INFO[p.name];
+  const p = P[c.pidx], info = INFO[p.name] || INFO[Object.keys(INFO).find(k => k.toLowerCase() === p.name.toLowerCase())];
+
   if(!info){
     pan.innerHTML = '<p style="color:var(--muted);font-size:.78rem;padding:8px 0">No research data available yet. You can add it when creating a custom peptide.</p>';
   } else {
